@@ -4,6 +4,7 @@ import java.io.File
 
 import io.delta.hive.test.HiveTest
 import io.delta.tables.DeltaTable
+
 import org.apache.spark.network.util.JavaUtils
 import org.apache.spark.sql.delta.DeltaLog
 import org.scalatest.BeforeAndAfterEach

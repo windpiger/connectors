@@ -42,8 +42,8 @@ lazy val core = (project in file("core"))
   .settings(
     name := "delta-core-shaded",
     libraryDependencies ++= Seq(
-      "io.delta" %% "delta-core" % "0.4.0" excludeAll (ExclusionRule("org.apache.hadoop")),
-      "org.apache.spark" %% "spark-sql" % sparkVersion excludeAll (ExclusionRule("org.apache.hadoop")),
+      "io.delta" %% "delta-core" % "0.4.0" excludeAll ExclusionRule("org.apache.hadoop"),
+      "org.apache.spark" %% "spark-sql" % sparkVersion excludeAll ExclusionRule("org.apache.hadoop"),
       "org.apache.hadoop" % "hadoop-client" % hadoopVersion % "provided"
     ),
 
@@ -60,7 +60,8 @@ lazy val coreTest = (project in file("coreTest"))
     unmanagedJars in Compile += (packageBin in(core, Compile, packageBin)).value,
 
     // Only dependency not in the uber jar
-    libraryDependencies += "org.apache.hadoop" % "hadoop-client" % "2.6.5",
+    libraryDependencies += "org.apache.hadoop" % "hadoop-client" % hadoopVersion excludeAll
+      ExclusionRule("org.slf4j", "slf4j-log4j12"),
 
     autoScalaLibrary := false,
 
@@ -157,6 +158,7 @@ lazy val hive = (project in file("hive")) settings (
     ),
     // TODO Figure out how this fixes some bad dependency
     "org.apache.spark" %% "spark-core" % sparkVersion % "test" classifier "tests",
-    "org.scalatest" %% "scalatest" % "3.0.5" % "test"
+    "org.scalatest" %% "scalatest" % "3.0.5" % "test",
+    "io.delta" %% "delta-core" % "0.4.0" % "test" excludeAll ExclusionRule("org.apache.hadoop")
   )
 )
