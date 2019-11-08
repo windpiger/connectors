@@ -272,30 +272,48 @@ class HiveConnectorSuite extends HiveTest with BeforeAndAfterEach {
 
         // equal pushed down
         assert(runQuery(
+          "explain select city, `date`, name, cnt from deltaPartitionTbl where `date` = '20180520'")
+          .mkString(" ").contains("filterExpr: (date = '20180520')"))
+        assert(runQuery(
           "select city, `date`, name, cnt from deltaPartitionTbl where `date` = '20180520'")
           .toList.sorted === testData.filter(_._2 == "20180520")
           .map(r => s"${r._1}\t${r._2}\t${r._3}\t${r._4}").sorted)
 
+        assert(runQuery(
+          "explain select city, `date`, name, cnt from deltaPartitionTbl where `date` != '20180520'")
+          .mkString(" ").contains("filterExpr: (date <> '20180520')"))
         assert(runQuery(
           "select city, `date`, name, cnt from deltaPartitionTbl where `date` != '20180520'")
           .toList.sorted === testData.filter(_._2 != "20180520")
           .map(r => s"${r._1}\t${r._2}\t${r._3}\t${r._4}").sorted)
 
         assert(runQuery(
+          "explain select city, `date`, name, cnt from deltaPartitionTbl where `date` > '20180520'")
+          .mkString(" ").contains("filterExpr: (date > '20180520')"))
+        assert(runQuery(
           "select city, `date`, name, cnt from deltaPartitionTbl where `date` > '20180520'")
           .toList.sorted === testData.filter(_._2 > "20180520")
           .map(r => s"${r._1}\t${r._2}\t${r._3}\t${r._4}").sorted)
 
+        assert(runQuery(
+          "explain select city, `date`, name, cnt from deltaPartitionTbl where `date` >= '20180520'")
+          .mkString(" ").contains("filterExpr: (date >= '20180520')"))
         assert(runQuery(
           "select city, `date`, name, cnt from deltaPartitionTbl where `date` >= '20180520'")
           .toList.sorted === testData.filter(_._2 >= "20180520")
           .map(r => s"${r._1}\t${r._2}\t${r._3}\t${r._4}").sorted)
 
         assert(runQuery(
+          "explain select city, `date`, name, cnt from deltaPartitionTbl where `date` < '20180520'")
+          .mkString(" ").contains("filterExpr: (date < '20180520')"))
+        assert(runQuery(
           "select city, `date`, name, cnt from deltaPartitionTbl where `date` < '20180520'")
           .toList.sorted === testData.filter(_._2 < "20180520")
           .map(r => s"${r._1}\t${r._2}\t${r._3}\t${r._4}").sorted)
 
+        assert(runQuery(
+          "explain select city, `date`, name, cnt from deltaPartitionTbl where `date` <= '20180520'")
+          .mkString(" ").contains("filterExpr: (date <= '20180520')"))
         assert(runQuery(
           "select city, `date`, name, cnt from deltaPartitionTbl where `date` <= '20180520'")
           .toList.sorted === testData.filter(_._2 <= "20180520")
@@ -303,16 +321,25 @@ class HiveConnectorSuite extends HiveTest with BeforeAndAfterEach {
 
         // expr(like) pushed down
         assert(runQuery(
+          "explain select * from deltaPartitionTbl where `date` like '201805%'")
+          .mkString(" ").contains("filterExpr: (date like '201805%')"))
+        assert(runQuery(
           "select * from deltaPartitionTbl where `date` like '201805%'").toList.sorted === testData
           .filter(_._2.contains("201805")).map(r => s"${r._3}\t${r._4}\t${r._1}\t${r._2}").sorted)
 
         // expr(in) pushed down
+        assert(runQuery(
+          "explain select name, `date`, cnt from deltaPartitionTbl where `city` in ('hz', 'sz')")
+          .mkString(" ").contains("filterExpr: (city) IN ('hz', 'sz')"))
         assert(runQuery(
           "select name, `date`, cnt from deltaPartitionTbl where `city` in ('hz', 'sz')")
           .toList.sorted === testData.filter(c => Seq("hz", "sz").contains(c._1))
           .map(r => s"${r._3}\t${r._2}\t${r._4}").sorted)
 
         // two partition column pushed down
+        assert(runQuery(
+          "explain select * from deltaPartitionTbl where `date` = '20181212' and `city` in ('hz', 'sz')")
+          .mkString(" ").contains("filterExpr: ((city) IN ('hz', 'sz') and (date = '20181212'))"))
         assert(runQuery(
           "select * from deltaPartitionTbl where `date` = '20181212' and `city` in ('hz', 'sz')")
           .toList.sorted === testData
