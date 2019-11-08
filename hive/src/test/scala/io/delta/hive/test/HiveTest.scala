@@ -14,9 +14,11 @@ import org.apache.hadoop.hive.ql.session.SessionState
 import org.apache.hadoop.mapred.{JobConf, MiniMRCluster}
 import org.apache.hadoop.mapreduce.MRJobConfig
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
-
+import org.apache.spark.SparkConf
 import org.apache.spark.network.util.JavaUtils
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.delta.DeltaLog
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 // TODO Yarn is using log4j2. Disable its verbose logs.
 trait HiveTest extends FunSuite with BeforeAndAfterAll {
@@ -79,6 +81,46 @@ trait HiveTest extends FunSuite with BeforeAndAfterAll {
       result.asScala
     } else {
       Nil
+    }
+  }
+
+
+  /**
+   * Drops table `tableName` after calling `f`.
+   */
+  protected def withTable(tableNames: String*)(f: => Unit): Unit = {
+    try f finally {
+      tableNames.foreach { name =>
+        runQuery(s"DROP TABLE IF EXISTS $name")
+      }
+    }
+  }
+
+  /**
+   * Creates a temporary directory, which is then passed to `f` and will be deleted after `f`
+   * returns.
+   *
+   * @todo Probably this method should be moved to a more general place
+   */
+  protected def withTempDir(f: File => Unit): Unit = {
+    val dir = Files.createTempDirectory("hiveondelta").toFile
+
+    try f(dir) finally {
+      JavaUtils.deleteRecursively(dir)
+    }
+  }
+
+  protected def withSparkSession(f: SparkSession => Unit): Unit = {
+    val conf = new SparkConf()
+    val spark = SparkSession.builder()
+      .appName("HiveConnectorSuite")
+      .master("local[2]")
+      .getOrCreate()
+
+    try f(spark) finally {
+      // Clean up resources so that we can use new DeltaLog and SparkSession
+      spark.stop()
+      DeltaLog.clearCache()
     }
   }
 }
