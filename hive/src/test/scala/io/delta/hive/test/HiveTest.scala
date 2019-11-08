@@ -84,7 +84,6 @@ trait HiveTest extends FunSuite with BeforeAndAfterAll {
     }
   }
 
-
   /**
    * Drops table `tableName` after calling `f`.
    */

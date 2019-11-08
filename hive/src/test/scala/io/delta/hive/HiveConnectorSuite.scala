@@ -345,6 +345,16 @@ class HiveConnectorSuite extends HiveTest with BeforeAndAfterEach {
           .toList.sorted === testData
           .filter(c => Seq("hz", "sz").contains(c._1) && c._2 == "20181212")
           .map(r => s"${r._3}\t${r._4}\t${r._1}\t${r._2}").sorted)
+
+        // data column not be pushed down
+        assert(runQuery(
+          "explain select * from deltaPartitionTbl where city = 'hz' and name = 'Jim'")
+          .mkString(" ").contains("filterExpr: (city = 'hz'"))
+        assert(runQuery(
+          "select * from deltaPartitionTbl where city = 'hz' and name = 'Jim'")
+          .toList.sorted === testData
+          .filter(c => c._1 == "hz" && c._3 == "Jim")
+          .map(r => s"${r._3}\t${r._4}\t${r._1}\t${r._2}").sorted)
       }
     }
   }
