@@ -9,21 +9,25 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-        <scala.binary.version>2.11</scala.binary.version>
+        <scala.binary.version>2.12</scala.binary.version>
+        <delta.version>0.4.0</delta.version>
+        <hadoop.version>2.7.2</hadoop.version>
+        <hive.version>2.3.3</hive.version>
+        <spark.version>2.4.3</spark.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>io.delta</groupId>
-            <artifactId>delta-core_2.11</artifactId>
+            <artifactId>delta-core_${scala.binary.version}</artifactId>
             <scope>provided</scope>
-            <version>0.4.0</version>
+            <version>${delta.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-exec</artifactId>
-            <version>2.3.3</version>
+            <version>${hive.version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -40,17 +44,21 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-mapreduce-client-core</artifactId>
-            <version>2.7.2</version>
+            <version>${hadoop.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_2.11</artifactId>
-            <version>2.4.3</version>
+            <artifactId>spark-sql_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
             <exclusions>
                 <exclusion>
                     <artifactId>org.apache.hadoop</artifactId>
+                    <groupId>*</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>org.apache.hive</artifactId>
                     <groupId>*</groupId>
                 </exclusion>
             </exclusions>
@@ -60,18 +68,38 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.scala-tools</groupId>
-                <artifactId>maven-scala-plugin</artifactId>
-                <version>2.15.0</version>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>scala-compile</id>
                         <goals>
                             <goal>compile</goal>
-                            <goal>testCompile</goal>
                         </goals>
+                    </execution>
+                    <!--<execution>-->
+                        <!--<id>scala-test-compile</id>-->
+                        <!--<goals>-->
+                            <!--<goal>testCompile</goal>-->
+                        <!--</goals>-->
+                    <!--</execution>-->
+                </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>none</phase>
+                    </execution>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <phase>none</phase>
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
