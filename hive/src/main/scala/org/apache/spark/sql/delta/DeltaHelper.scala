@@ -51,7 +51,7 @@ object DeltaHelper extends Logging {
   }
 
   private def parsePartitionColumn(columnSpec: String): Option[(String, String)] = {
-    import org.apache.spark.sql.catalyst.catalog.ExternalCatalogUtils.{escapePathName, unescapePathName, DEFAULT_PARTITION_NAME}
+    import org.apache.spark.sql.catalyst.catalog.ExternalCatalogUtils.unescapePathName
 
     val equalSignIndex = columnSpec.indexOf('=')
     if (equalSignIndex == -1) {
@@ -91,8 +91,8 @@ object DeltaHelper extends Logging {
   }
 
   def checkHiveColsInDelta(
-                            rootPath: Path,
-                            hiveSchema: java.util.List[FieldSchema]): Map[String, String] = {
+      rootPath: Path,
+      hiveSchema: java.util.List[FieldSchema]): Map[String, String] = {
     val deltaMeta = getDeltaLog(rootPath).snapshot.metadata
     assert(hiveSchema.size() == deltaMeta.schema.size,
       s"Hive cols(${hiveSchema.asScala.map(_.getName).mkString(",")}) number does not match " +
