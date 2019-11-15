@@ -26,8 +26,7 @@ class HiveConnectorSuite extends HiveTest with BeforeAndAfterEach {
           runQuery(
             s"""
                |create table deltaTbl(a string, b int)
-               |stored by 'io.delta.hive.DeltaStorageHandler'
-               |with serdeproperties("delta.table.path" = '${dir.getCanonicalPath}')
+               |stored by 'io.delta.hive.DeltaStorageHandler' location '${dir.getCanonicalPath}'
          """.stripMargin
           )
         }.getMessage
@@ -36,7 +35,7 @@ class HiveConnectorSuite extends HiveTest with BeforeAndAfterEach {
     }
   }
 
-  test("DDL: delta.table.path should be set in serdeproperties ") {
+  test("DDL: location should be set when creating table") {
     withTable("deltaTbl") {
       val e = intercept[Exception] {
         runQuery(
@@ -46,7 +45,7 @@ class HiveConnectorSuite extends HiveTest with BeforeAndAfterEach {
          """.stripMargin
         )
       }.getMessage
-      assert(e.contains("delta.table.path is missing in SERDEPROPERTIES when creating table"))
+      assert(e.contains("table location should be set when creating table"))
     }
   }
 
@@ -58,8 +57,7 @@ class HiveConnectorSuite extends HiveTest with BeforeAndAfterEach {
             s"""
                |create external table deltaTbl(a string, b int)
                |partitioned by(c string)
-               |stored by 'io.delta.hive.DeltaStorageHandler'
-               |with serdeproperties("delta.table.path" = '${dir.getCanonicalPath}')
+               |stored by 'io.delta.hive.DeltaStorageHandler'  location '${dir.getCanonicalPath}'
          """.stripMargin
           )
         }.getMessage
@@ -77,8 +75,7 @@ class HiveConnectorSuite extends HiveTest with BeforeAndAfterEach {
           runQuery(
             s"""
                |create external table deltaTbl(a string, b int)
-               |stored by 'io.delta.hive.DeltaStorageHandler'
-               |with serdeproperties("delta.table.path" = '${dir.getCanonicalPath}')
+               |stored by 'io.delta.hive.DeltaStorageHandler' location '${dir.getCanonicalPath}'
          """.stripMargin
           )
         }.getMessage
@@ -103,8 +100,7 @@ class HiveConnectorSuite extends HiveTest with BeforeAndAfterEach {
           runQuery(
             s"""
                |create external table deltaTbl(b string, a string)
-               |stored by 'io.delta.hive.DeltaStorageHandler'
-               |with serdeproperties("delta.table.path" = '${dir.getCanonicalPath}')
+               |stored by 'io.delta.hive.DeltaStorageHandler' location '${dir.getCanonicalPath}'
          """.stripMargin
           )
         }.getMessage
@@ -131,8 +127,7 @@ class HiveConnectorSuite extends HiveTest with BeforeAndAfterEach {
           runQuery(
             s"""
                |create external table deltaTbl(a string, b string)
-               |stored by 'io.delta.hive.DeltaStorageHandler'
-               |with serdeproperties("delta.table.path" = '${dir.getCanonicalPath}')
+               |stored by 'io.delta.hive.DeltaStorageHandler' location '${dir.getCanonicalPath}'
          """.stripMargin
           )
         }.getMessage
@@ -143,8 +138,7 @@ class HiveConnectorSuite extends HiveTest with BeforeAndAfterEach {
           runQuery(
             s"""
                |create external table deltaTbl(e string, c string, b string)
-               |stored by 'io.delta.hive.DeltaStorageHandler'
-               |with serdeproperties("delta.table.path" = '${dir.getCanonicalPath}')
+               |stored by 'io.delta.hive.DeltaStorageHandler' location '${dir.getCanonicalPath}'
          """.stripMargin
           )
         }.getMessage
@@ -167,8 +161,7 @@ class HiveConnectorSuite extends HiveTest with BeforeAndAfterEach {
         runQuery(
           s"""
              |create external table deltaNonPartitionTbl(c1 int, c2 string)
-             |stored by 'io.delta.hive.DeltaStorageHandler'
-             |with serdeproperties("delta.table.path" = '${dir.getCanonicalPath}')
+             |stored by 'io.delta.hive.DeltaStorageHandler' location '${dir.getCanonicalPath}'
          """.stripMargin
         )
 
@@ -194,8 +187,7 @@ class HiveConnectorSuite extends HiveTest with BeforeAndAfterEach {
         runQuery(
           s"""
              |create external table deltaPartitionTbl(c1 int, c2 string)
-             |stored by 'io.delta.hive.DeltaStorageHandler'
-             |with serdeproperties("delta.table.path" = '${dir.getCanonicalPath}')
+             |stored by 'io.delta.hive.DeltaStorageHandler' location '${dir.getCanonicalPath}'
          """.stripMargin
         )
 
@@ -230,8 +222,7 @@ class HiveConnectorSuite extends HiveTest with BeforeAndAfterEach {
         runQuery(
           s"""
              |create external table deltaPartitionTbl(c1 int, c2 string)
-             |stored by 'io.delta.hive.DeltaStorageHandler'
-             |with serdeproperties("delta.table.path" = '${dir.getCanonicalPath}')
+             |stored by 'io.delta.hive.DeltaStorageHandler' location '${dir.getCanonicalPath}'
          """.stripMargin
         )
 
@@ -265,8 +256,7 @@ class HiveConnectorSuite extends HiveTest with BeforeAndAfterEach {
         runQuery(
           s"""
              |create external table deltaPartitionTbl(name string, cnt int, city string, `date` string)
-             |stored by 'io.delta.hive.DeltaStorageHandler'
-             |with serdeproperties("delta.table.path" = '${dir.getCanonicalPath}')
+             |stored by 'io.delta.hive.DeltaStorageHandler' location '${dir.getCanonicalPath}'
          """.stripMargin
         )
 
@@ -375,8 +365,7 @@ class HiveConnectorSuite extends HiveTest with BeforeAndAfterEach {
           runQuery(
             s"""
                |create external table deltaPartitionTbl(name string, cnt int, city string, `date` string)
-               |stored by 'io.delta.hive.DeltaStorageHandler'
-               |with serdeproperties("delta.table.path" = '${dir.getCanonicalPath}')
+               |stored by 'io.delta.hive.DeltaStorageHandler' location '${dir.getCanonicalPath}'
          """.stripMargin
           )
 

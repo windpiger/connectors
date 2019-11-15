@@ -6,7 +6,6 @@ import java.util.List;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.ql.exec.Utilities;
-import org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat;
 import org.apache.hadoop.hive.ql.io.parquet.read.DataWritableReadSupport;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.NullWritable;
@@ -19,7 +18,7 @@ import org.slf4j.LoggerFactory;
 
 public class DeltaInputFormat extends FileInputFormat<NullWritable, ArrayWritable> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MapredParquetInputFormat.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DeltaInputFormat.class);
     private final ParquetInputFormat<ArrayWritable> realInput;
 
     public DeltaInputFormat() {

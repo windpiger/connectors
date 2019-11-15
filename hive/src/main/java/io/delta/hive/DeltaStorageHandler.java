@@ -157,12 +157,10 @@ public class DeltaStorageHandler extends DefaultStorageHandler
             throw new MetaException("HiveOnDelta does not support to create a partition hive table");
         }
 
-        Map<String, String> serdeParam = tbl.getSd().getSerdeInfo().getParameters();
-        String deltaRootString = serdeParam.get(DELTA_TABLE_PATH);
-
+        String deltaRootString = tbl.getSd().getLocation();
         try {
             if (deltaRootString == null || deltaRootString.trim().length() == 0) {
-                throw new MetaException("Error: delta.table.path is missing in SERDEPROPERTIES when creating table");
+                throw new MetaException("table location should be set when creating table");
             } else {
                 Path deltaPath = new Path(deltaRootString);
                 FileSystem fs = deltaPath.getFileSystem(getConf());
@@ -172,6 +170,7 @@ public class DeltaStorageHandler extends DefaultStorageHandler
                     Map<String, String> partitionProps = JavaConverters.mapAsJavaMap(
                             DeltaHelper.checkHiveColsInDelta(deltaPath, tbl.getSd().getCols()));
                     tbl.getSd().getSerdeInfo().getParameters().putAll(partitionProps);
+                    tbl.getSd().getSerdeInfo().getParameters().put(DELTA_TABLE_PATH, deltaRootString);
                     LOG.info("write partition cols/types to table properties " +
                             Joiner.on(",").withKeyValueSeparator("=").join(partitionProps));
                 }
