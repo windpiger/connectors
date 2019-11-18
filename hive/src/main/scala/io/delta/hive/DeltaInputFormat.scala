@@ -51,10 +51,8 @@ class DeltaInputFormat extends MapredParquetInputFormat {
       DeltaLog.filterFileList(
         snapshotToUse.metadata.partitionColumns, snapshotToUse.allFiles.toDF(), partitionFilters)
         .as[AddFile](SingleAction.addFileEncoder)
-        .collect()
-        .map { file =>
-          fs.getFileStatus(new Path(rootPath, file.path))
-        }
+        .collect().map { file =>
+          fs.getFileStatus(new Path(rootPath, file.path))}
     }
   } catch {
     case e: Throwable =>

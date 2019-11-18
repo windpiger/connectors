@@ -1,8 +1,7 @@
 package org.apache.spark.sql.delta
 
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
-import org.apache.spark.sql.catalyst.expressions.{And, EqualTo, Expression, Literal}
-import org.apache.spark.sql.delta.actions.AddFile
+import org.apache.spark.sql.catalyst.expressions.{And, EqualTo, Expression, Literal, Or}
 import org.apache.spark.sql.delta.util.PartitionUtils
 
 object DeltaHelper {
@@ -27,12 +26,6 @@ object DeltaHelper {
       }.reduce(And)
     }
 
-    import org.apache.spark.sql.delta.actions.SingleAction._
-    val files = DeltaLog.filterFileList(
-      metadata.partitionColumns, snapshot.allFiles.toDF(), partitionFilters).as[AddFile].collect()
-    if (files.length == 0) {
-      throw DeltaErrors.pathNotExistsException(partitionFragments.mkString(","))
-    }
-    partitionFilters
+    Seq(partitionFilters.reduce(Or))
   }
 }
