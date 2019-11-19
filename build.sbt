@@ -22,7 +22,7 @@ val hiveVersion = "2.3.5"
 lazy val commonSettings = Seq(
   version := "0.4.0",
   organization := "io.delta",
-  scalaVersion := "2.12.8",
+  scalaVersion := "2.11.12",
   fork := true,
   // Configurations to speed up tests and reduce memory footprint
   javaOptions in Test ++= Seq(
@@ -103,6 +103,7 @@ lazy val assemblySettings = Seq(
     ShadeRule.rename("org.apache.commons.**" -> "@0").inAll, // Initialization via reflection fails when package changed
     ShadeRule.rename("org.xerial.snappy.*Native*" -> "@0").inAll, // JNI class fails to resolve native code when package changed
     ShadeRule.rename("com.databricks.**" -> "@0").inAll, // Scala package object does not resolve correctly when package changed
+    ShadeRule.rename("org.json4s.**" -> "@0").inAll,
 
     // Shade everything else
     ShadeRule.rename("com.**" -> "shadedelta.@0").inAll,
@@ -129,7 +130,7 @@ lazy val assemblySettings = Seq(
 )
 
 lazy val hive = (project in file("hive")) settings (
-  scalaVersion := "2.12.8",
+  scalaVersion := "2.11.12",
   name := "hive-delta",
   commonSettings,
   unmanagedJars in Compile += (packageBin in(core, Compile, packageBin)).value,
