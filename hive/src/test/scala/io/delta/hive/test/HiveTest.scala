@@ -37,6 +37,8 @@ trait HiveTest extends FunSuite with BeforeAndAfterAll {
     // MetaException(message:Version information not found in metastore.)t
     conf.set("hive.metastore.schema.verification", "false")
     conf.set("datanucleus.schema.autoCreateAll", "true")
+    conf.set("hive.fetch.task.conversion", "none")
+    conf.set("hive.input.format", "org.apache.hadoop.hive.ql.io.HiveInputFormat")
     conf.set(
       "javax.jdo.option.ConnectionURL",
       s"jdbc:derby:memory:;databaseName=${metastoreDir.getCanonicalPath};create=true")
