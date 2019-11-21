@@ -13,8 +13,6 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.delta.actions.{AddFile, SingleAction}
 
 object DeltaHelper extends Logging {
-  // cache the deltalog instance
-  private var deltaLogMap = scala.collection.mutable.Map[Path, DeltaLog]()
 
   def parsePathPartition(path: Path, partitionCols: Seq[String]): Map[String, String] = {
     val columns = ArrayBuffer.empty[(String, String)]
@@ -68,7 +66,7 @@ object DeltaHelper extends Logging {
   }
 
   def listDeltaFiles(rootPath: Path, job: JobConf): java.util.List[FileStatus] = {
-    val deltaLog = getDeltaLog(rootPath)
+    val deltaLog = DeltaLog.forTable(spark, rootPath)
     // get the snapshot of the version
     val snapshotToUse = deltaLog.snapshot
 
@@ -93,7 +91,7 @@ object DeltaHelper extends Logging {
   def checkHiveColsInDelta(
       rootPath: Path,
       hiveSchema: java.util.List[FieldSchema]): Map[String, String] = {
-    val deltaMeta = getDeltaLog(rootPath).snapshot.metadata
+    val deltaMeta = DeltaLog.forTable(spark, rootPath).snapshot.metadata
     assert(hiveSchema.size() == deltaMeta.schema.size,
       s"Hive cols(${hiveSchema.asScala.map(_.getName).mkString(",")}) number does not match " +
         s"Delta cols(${deltaMeta.schema.map(_.name).mkString(",")})")
@@ -116,13 +114,7 @@ object DeltaHelper extends Logging {
   }
 
   def getPartitionCols(rootPath: Path): Seq[String] = {
-    getDeltaLog(rootPath).snapshot.metadata.partitionColumns
-  }
-
-  private def getDeltaLog(rootPath: Path): DeltaLog = deltaLogMap.synchronized {
-    deltaLogMap.getOrElseUpdate(rootPath, {
-      DeltaLog.forTable(spark, rootPath)
-    })
+    DeltaLog.forTable(spark, rootPath).snapshot.metadata.partitionColumns
   }
 
   def spark: SparkSession = SparkSession.builder()
