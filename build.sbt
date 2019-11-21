@@ -74,7 +74,6 @@ lazy val coreTest = (project in file("coreTest"))
     commonSettings
   )
 
-
 lazy val assemblySettings = Seq(
   test in assembly := {},
   assemblyMergeStrategy in assembly := {
