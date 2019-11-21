@@ -81,11 +81,10 @@ object DeltaHelper extends Logging {
     DeltaLog.filterFileList(
       snapshotToUse.metadata.partitionColumns, snapshotToUse.allFiles.toDF(), convertedFilterExpr)
       .as[AddFile](SingleAction.addFileEncoder)
-      .collect()
-      .map { f =>
-        logInfo(s"selected delta file ${f.path} under $rootPath" )
+      .collect().par.map { f =>
+        logInfo(s"selected delta file ${f.path} under $rootPath")
         fs.getFileStatus(new Path(rootPath, f.path))
-      }.toSeq.asJava
+      }.toList.asJava
   }
 
   def checkHiveColsInDelta(
