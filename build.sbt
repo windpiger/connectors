@@ -161,3 +161,18 @@ lazy val hive = (project in file("hive")) settings (
     "org.scalatest" %% "scalatest" % "3.0.5" % "test"
   )
 )
+
+lazy val delta_thin = (project in file("delta-thin")) settings (
+  scalaVersion := "2.11.12",
+  name := "delta-thin",
+  commonSettings,
+
+  libraryDependencies ++= Seq(
+    "org.apache.hadoop" % "hadoop-client" % hadoopVersion % "provided",
+    "com.github.mjakubowski84" %% "parquet4s-core" % "0.11.0" % "provided",
+    "com.fasterxml.jackson.core" % "jackson-databind" % "2.6.7.1" % "provided",
+    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.6.7.1" % "provided",
+    "com.chuusai" %% "shapeless" % "2.3.3" % "provided"
+
+  )
+)
