@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
-import io.delta.thin.SingleAction
+import io.delta.thin.actions.SingleAction
 import io.delta.thin.storage.HDFSLogStore
 import org.apache.hadoop.conf.Configuration
 

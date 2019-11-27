@@ -38,6 +38,7 @@ class DeltaLog private(
       val snapshot = new Snapshot(
         logPath,
         newVersion,
+        None,
         checkpointFiles ++ deltaFiles,
         this,
         // we don't want to make an additional RPC here to get commit timestamps when "deltas" is
@@ -53,7 +54,7 @@ class DeltaLog private(
 //        throw DeltaErrors.missingPartFilesException(c, e)
 //    }
   }.getOrElse {
-    new Snapshot(logPath, -1, Nil, this, -1L)
+    new Snapshot(logPath, -1, None, Nil, this, -1L)
   }
 
   if (currentSnapshot.version == -1) {
@@ -80,87 +81,86 @@ class DeltaLog private(
     * Note: the caller should hold `deltaLogLock` before calling this method.
     */
   private def updateInternal(isAsync: Boolean): Snapshot = {
-//        try {
-//          val newFiles = store
-//            // List from the current version since we want to get the checkpoint file for the current
-//            // version
-//            .listFrom(checkpointPrefix(logPath, math.max(currentSnapshot.version, 0L)))
-//            // Pick up checkpoint files not older than the current version and delta files newer than
-//            // the current version
-//            .filter { file =>
-//            isCheckpointFile(file.getPath) ||
-//              (isDeltaFile(file.getPath) && deltaVersion(file.getPath) > currentSnapshot.version)
-//          }.toArray
-//
-//          val (checkpoints, deltas) = newFiles.partition(f => isCheckpointFile(f.getPath))
-//          if (deltas.isEmpty) {
-//            return currentSnapshot
-//          }
-//
-//          val deltaVersions = deltas.map(f => deltaVersion(f.getPath))
-//          verifyDeltaVersions(deltaVersions)
-//          val lastChkpoint = lastCheckpoint.map(CheckpointInstance.apply)
-//            .getOrElse(CheckpointInstance.MaxValue)
-//          val checkpointFiles = checkpoints.map(f => CheckpointInstance(f.getPath))
-//          val newCheckpoint = getLatestCompleteCheckpointFromList(checkpointFiles, lastChkpoint)
-//          val newSnapshot = if (newCheckpoint.isDefined) {
-//            // If there is a new checkpoint, start new lineage there.
-//            val newCheckpointVersion = newCheckpoint.get.version
-//            assert(
-//              newCheckpointVersion >= currentSnapshot.version,
-//              s"Attempting to load a checkpoint($newCheckpointVersion) " +
-//                s"older than current version (${currentSnapshot.version})")
-//            val newCheckpointFiles = newCheckpoint.get.getCorrespondingFiles(logPath)
-//
-//            val newVersion = deltaVersions.last
-//            val deltaFiles =
-//              ((newCheckpointVersion + 1) to newVersion).map(deltaFile(logPath, _))
-//
-//            println(s"Loading version $newVersion starting from checkpoint $newCheckpointVersion")
-//
-//            new Snapshot(
-//              logPath,
-//              newVersion,
-//              newCheckpointFiles ++ deltaFiles,
-//              this,
-//              deltas.last.getModificationTime)
-//          } else {
-//            // If there is no new checkpoint, just apply the deltas to the existing state.
-//            assert(currentSnapshot.version + 1 == deltaVersions.head,
-//              s"versions in [${currentSnapshot.version + 1}, ${deltaVersions.head}) are missing")
-//            if (currentSnapshot.lineageLength >= maxSnapshotLineageLength) {
-//              // Load Snapshot from scratch to avoid StackOverflowError
-//              getSnapshotAt(deltaVersions.last, Some(deltas.last.getModificationTime))
-//            } else {
-//              new Snapshot(
-//                logPath,
-//                deltaVersions.last,
-//                Some(currentSnapshot.state),
-//                deltas.map(_.getPath),
-//                minFileRetentionTimestamp,
-//                this,
-//                deltas.last.getModificationTime,
-//                lineageLength = currentSnapshot.lineageLength + 1)
-//            }
-//          }
-//          validateChecksum(newSnapshot)
-//          currentSnapshot.uncache()
-//          currentSnapshot = newSnapshot
-//        } catch {
-//          case f: FileNotFoundException =>
-//            val message = s"No delta log found for the Delta table at $logPath"
-//            logInfo(message)
-//            // When the state is empty, this is expected. The log will be lazily created when needed.
-//            // When the state is not empty, it's a real issue and we can't continue to execution.
-//            if (currentSnapshot.version != -1) {
-//              val e = new FileNotFoundException(message)
-//              e.setStackTrace(f.getStackTrace())
-//              throw e
-//            }
-//        }
-//        lastUpdateTimestamp = clock.getTimeMillis()
-//        currentSnapshot
-      null
+        try {
+          val newFiles = store
+            // List from the current version since we want to get the checkpoint file for the current
+            // version
+            .listFrom(checkpointPrefix(logPath, math.max(currentSnapshot.version, 0L)))
+            // Pick up checkpoint files not older than the current version and delta files newer than
+            // the current version
+            .filter { file =>
+            isCheckpointFile(file.getPath) ||
+              (isDeltaFile(file.getPath) && deltaVersion(file.getPath) > currentSnapshot.version)
+          }.toArray
+
+          val (checkpoints, deltas) = newFiles.partition(f => isCheckpointFile(f.getPath))
+          if (deltas.isEmpty) {
+            return currentSnapshot
+          }
+
+          val deltaVersions = deltas.map(f => deltaVersion(f.getPath))
+          verifyDeltaVersions(deltaVersions)
+          val lastChkpoint = lastCheckpoint.map(CheckpointInstance.apply)
+            .getOrElse(CheckpointInstance.MaxValue)
+          val checkpointFiles = checkpoints.map(f => CheckpointInstance(f.getPath))
+          val newCheckpoint = getLatestCompleteCheckpointFromList(checkpointFiles, lastChkpoint)
+          val newSnapshot = if (newCheckpoint.isDefined) {
+            // If there is a new checkpoint, start new lineage there.
+            val newCheckpointVersion = newCheckpoint.get.version
+            assert(
+              newCheckpointVersion >= currentSnapshot.version,
+              s"Attempting to load a checkpoint($newCheckpointVersion) " +
+                s"older than current version (${currentSnapshot.version})")
+            val newCheckpointFiles = newCheckpoint.get.getCorrespondingFiles(logPath)
+
+            val newVersion = deltaVersions.last
+            val deltaFiles =
+              ((newCheckpointVersion + 1) to newVersion).map(deltaFile(logPath, _))
+
+            println(s"Loading version $newVersion starting from checkpoint $newCheckpointVersion")
+
+            new Snapshot(
+              logPath,
+              newVersion,
+              None,
+              newCheckpointFiles ++ deltaFiles,
+              this,
+              deltas.last.getModificationTime)
+          } else {
+            // If there is no new checkpoint, just apply the deltas to the existing state.
+            assert(currentSnapshot.version + 1 == deltaVersions.head,
+              s"versions in [${currentSnapshot.version + 1}, ${deltaVersions.head}) are missing")
+            if (currentSnapshot.lineageLength >= 50) {
+              // Load Snapshot from scratch to avoid StackOverflowError
+              getSnapshotAt(deltaVersions.last, Some(deltas.last.getModificationTime))
+            } else {
+              new Snapshot(
+                logPath,
+                deltaVersions.last,
+                Some(currentSnapshot.state),
+                deltas.map(_.getPath),
+                this,
+                deltas.last.getModificationTime,
+                lineageLength = currentSnapshot.lineageLength + 1)
+            }
+          }
+          validateChecksum(newSnapshot)
+          currentSnapshot.uncache()
+          currentSnapshot = newSnapshot
+        } catch {
+          case f: FileNotFoundException =>
+            val message = s"No delta log found for the Delta table at $logPath"
+            logInfo(message)
+            // When the state is empty, this is expected. The log will be lazily created when needed.
+            // When the state is not empty, it's a real issue and we can't continue to execution.
+            if (currentSnapshot.version != -1) {
+              val e = new FileNotFoundException(message)
+              e.setStackTrace(f.getStackTrace())
+              throw e
+            }
+        }
+        lastUpdateTimestamp = clock.getTimeMillis()
+        currentSnapshot
     }
 
   /**
@@ -180,6 +180,45 @@ class DeltaLog private(
   }
   /** Returns the current snapshot. Note this does not automatically `update()`. */
   def snapshot: Snapshot = currentSnapshot
+
+
+  /** Get the snapshot at `version`. */
+  def getSnapshotAt(
+      version: Long,
+      commitTimestamp: Option[Long] = None,
+      lastCheckpointHint: Option[CheckpointInstance] = None): Snapshot = {
+    val current = snapshot
+    if (current.version == version) {
+      return current
+    }
+
+    // Do not use the hint if the version we're asking for is smaller than the last checkpoint hint
+    val lastCheckpoint = lastCheckpointHint.collect { case ci if ci.version <= version => ci }
+      .orElse(findLastCompleteCheckpoint(CheckpointInstance(version, None)))
+    val lastCheckpointFiles = lastCheckpoint.map { c =>
+      c.getCorrespondingFiles(logPath)
+    }.toSeq.flatten
+    val checkpointVersion = lastCheckpoint.map(_.version)
+    if (checkpointVersion.isEmpty) {
+      val versionZeroFile = deltaFile(logPath, 0L)
+      val versionZeroFileExists = store.listFrom(versionZeroFile)
+        .take(1)
+        .exists(_.getPath.getName == versionZeroFile.getName)
+      if (!versionZeroFileExists) {
+        throw new Exception(s"${versionZeroFile}---")
+//        throw DeltaErrors.logFileNotFoundException(versionZeroFile, 0L, metadata)
+      }
+    }
+    val deltaData =
+      ((checkpointVersion.getOrElse(-1L) + 1) to version).map(deltaFile(logPath, _))
+    new Snapshot(
+      logPath,
+      version,
+      None,
+      lastCheckpointFiles ++ deltaData,
+      this,
+      commitTimestamp.getOrElse(-1L))
+  }
 
   /**
    * Verify the versions are contiguous.

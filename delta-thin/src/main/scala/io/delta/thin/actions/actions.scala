@@ -1,13 +1,12 @@
-package io.delta.thin
-
+package io.delta.thin.actions
 
 import java.net.URI
 import java.sql.Timestamp
 
 import com.fasterxml.jackson.annotation.{JsonIgnore, JsonInclude}
 import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.{JsonSerializer, SerializerProvider}
 import com.fasterxml.jackson.databind.annotation.{JsonDeserialize, JsonSerialize}
+import com.fasterxml.jackson.databind.{JsonSerializer, SerializerProvider}
 import io.delta.thin.util.JsonUtils
 import org.codehaus.jackson.annotate.JsonRawValue
 
