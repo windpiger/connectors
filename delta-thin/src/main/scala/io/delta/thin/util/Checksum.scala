@@ -6,6 +6,7 @@ import io.delta.thin.{DeltaLog, Snapshot}
 import io.delta.thin.storage.LogStore
 import org.apache.hadoop.fs.Path
 
+import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
 
 /**
@@ -73,7 +74,7 @@ trait VerifyChecksum {
     var mismatchStringOpt: Option[String] = None
     try {
       val checksum = JsonUtils.mapper.readValue[VersionChecksum](checksumData.head)
-      mismatchStringOpt = checkMismatch(checksum, snapshot)
+//      mismatchStringOpt = checkMismatch(checksum, snapshot)
     } catch {
       case NonFatal(e) =>
 //        recordDeltaEvent(
@@ -102,19 +103,19 @@ trait VerifyChecksum {
 //      }
     }
   }
-
-  private def checkMismatch(checksum: VersionChecksum, snapshot: Snapshot): Option[String] = {
-    val result = new ArrayBuffer[String]()
-    def compare(expected: Long, found: Long, title: String): Unit = {
-      if (expected != found) {
-        result += s"$title - Expected: $expected Computed: $found"
-      }
-    }
-    compare(checksum.tableSizeBytes, snapshot.sizeInBytes, "Table size (bytes)")
-    compare(checksum.numFiles, snapshot.numOfFiles, "Number of files")
-    compare(checksum.numMetadata, snapshot.numOfMetadata, "Metadata updates")
-    compare(checksum.numProtocol, snapshot.numOfProtocol, "Protocol updates")
-    compare(checksum.numTransactions, snapshot.numOfSetTransactions, "Transactions")
-    if (result.isEmpty) None else Some(result.mkString("\n"))
-  }
+//
+//  private def checkMismatch(checksum: VersionChecksum, snapshot: Snapshot): Option[String] = {
+//    val result = new ArrayBuffer[String]()
+//    def compare(expected: Long, found: Long, title: String): Unit = {
+//      if (expected != found) {
+//        result += s"$title - Expected: $expected Computed: $found"
+//      }
+//    }
+//    compare(checksum.tableSizeBytes, snapshot.sizeInBytes, "Table size (bytes)")
+//    compare(checksum.numFiles, snapshot.numOfFiles, "Number of files")
+//    compare(checksum.numMetadata, snapshot.numOfMetadata, "Metadata updates")
+//    compare(checksum.numProtocol, snapshot.numOfProtocol, "Protocol updates")
+//    compare(checksum.numTransactions, snapshot.numOfSetTransactions, "Transactions")
+//    if (result.isEmpty) None else Some(result.mkString("\n"))
+//  }
 }

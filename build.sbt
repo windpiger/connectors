@@ -133,11 +133,13 @@ lazy val hive = (project in file("hive")) settings (
   scalaVersion := "2.11.12",
   name := "hive-delta",
   commonSettings,
-  unmanagedJars in Compile += (packageBin in(core, Compile, packageBin)).value,
+  unmanagedJars in Compile += (packageBin in(core ,Compile, packageBin)).value,
+  unmanagedJars in Compile += (packageBin in(delta_thin ,Compile, packageBin)).value,
   autoScalaLibrary := false,
 
   // Ensures that the connector core jar is compiled before compiling this project
   (compile in Compile) := ((compile in Compile) dependsOn (packageBin in (core, Compile, packageBin))).value,
+//  (compile in Compile) := ((compile in Compile) dependsOn (packageBin in (delta_thin, Compile, packageBin))).value,
 
   libraryDependencies ++= Seq(
     "org.apache.hadoop" % "hadoop-client" % hadoopVersion % "provided",
@@ -173,6 +175,5 @@ lazy val delta_thin = (project in file("delta-thin")) settings (
     "com.fasterxml.jackson.core" % "jackson-databind" % "2.6.7.1",
     "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.6.7.1",
     "com.chuusai" %% "shapeless" % "2.3.3"
-
   )
 )

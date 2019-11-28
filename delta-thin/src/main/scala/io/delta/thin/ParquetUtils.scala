@@ -16,7 +16,7 @@ object ParquetUtils {
 //    println("00000")
 
     val store = new HDFSLogStore(new Configuration())
-    val paths = Seq("file:///Users/songjun.sj/Desktop/testdelta/_delta_log/00000000000000000000.json",
+    val paths = Seq(
       "file:///Users/songjun.sj/Desktop/testdelta/_delta_log/00000000000000000010.checkpoint.parquet")
     val pathAndFormats = paths.map(path => path -> path.split("\\.").last)
     val xx =  pathAndFormats.groupBy(_._2).flatMap { case (format, paths) =>

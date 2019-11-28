@@ -58,9 +58,9 @@ class InMemoryLogReplay {
   }
 
   /** Returns the current state of the Table as an iterator of actions. */
-  def checkpoint: Iterator[Action] = {
-    Option(currentProtocolVersion).toIterator ++
-    Option(currentMetaData).toIterator ++
-    activeFiles.values.toSeq.sortBy(_.path).iterator
+  def checkpoint: Seq[Action] = {
+    Option(currentProtocolVersion).toSeq ++
+    Option(currentMetaData).toSeq ++
+    activeFiles.values.toSeq.sortBy(_.path)
   }
 }

@@ -37,7 +37,6 @@ class Snapshot(
 
     paths.map(_.toString).sortWith(_ < _).flatMap { path =>
       val format = path.split("\\.").last
-      println(s"----${path}---")
       if (format == "json") {
         store.read(path).map { line =>
           JsonUtils.mapper.readValue[SingleAction](line)
@@ -72,32 +71,22 @@ class Snapshot(
     }
 
     allActions.map(_.unwrap).foreach (action => state.append(0, action))
-
-    state.checkpoint.map(_.wrap)
+    println(s"---XXXXXXXXXX-${allActions.size}")
+    val x = state.checkpoint
+    println(s"----YYYYYY-${x.size}")
+    val z = x.map(_.wrap)
+    println(s"----ZZZZZZZ-${z.size}")
+    z
   }
 
-
-  // Force materialization of the cache and collect the basics to the driver for fast access.
   // Here we need to bypass the ACL checks for SELECT anonymous function permissions.
-  val State(protocol, metadata, setTransactions, sizeInBytes, numOfFiles, numOfMetadata,
-  numOfProtocol, numOfRemoves, numOfSetTransactions) = {
+  /** All of the files present in this [[Snapshot]]. */
+  def allFiles: Set[AddFile] = {
+    state.map(_.unwrap).filter(_.isInstanceOf[AddFile]).map(_.asInstanceOf[AddFile])
+  }
 
-    state.foreach {
+  lazy val metadata = state.filter(_.unwrap.isInstanceOf[Metadata]).head.asInstanceOf[Metadata]
 
-    }
-    state.select(
-      coalesce(last($"protocol", ignoreNulls = true), defaultProtocol()) as "protocol",
-      coalesce(last($"metaData", ignoreNulls = true), emptyMetadata()) as "metadata",
-      collect_set($"txn") as "setTransactions",
-      // sum may return null for empty data set.
-      coalesce(sum($"add.size"), lit(0L)) as "sizeInBytes",
-      count($"add") as "numOfFiles",
-      count($"metaData") as "numOfMetadata",
-      count($"protocol") as "numOfProtocol",
-      count($"remove") as "numOfRemoves",
-      count($"txn") as "numOfSetTransactions")
-      .as[State](stateEncoder)}
-    .first
 }
 
 object Snapshot {
@@ -118,6 +107,7 @@ object Snapshot {
     val snapShot = new Snapshot(
       new Path("file:///Users/songjun.sj/Desktop/testdelta/_delta_log"),
       0,
+      None,
       Seq(new Path("file:///Users/songjun.sj/Desktop/testdelta/_delta_log/00000000000000000010.json"),
       new Path("file:///Users/songjun.sj/Desktop/testdelta/_delta_log/00000000000000000010.checkpoint.parquet")),
       null,

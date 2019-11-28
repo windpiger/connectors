@@ -1,18 +1,22 @@
 package io.delta.thin
 
+import java.io.FileNotFoundException
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.{Callable, TimeUnit}
 
 import com.google.common.cache.{CacheBuilder, RemovalListener, RemovalNotification}
+import io.delta.thin.actions.AddFile
 import io.delta.thin.storage.LogStoreProvider
+import io.delta.thin.util.VerifyChecksum
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 
 import scala.util.Try
+import scala.util.control.NonFatal
 
 class DeltaLog private(
     val logPath: Path,
-    val dataPath: Path) extends Checkpoints with LogStoreProvider {
+    val dataPath: Path) extends Checkpoints with LogStoreProvider with VerifyChecksum {
 
   import io.delta.thin.util.FileNames._
 
@@ -56,6 +60,7 @@ class DeltaLog private(
   }.getOrElse {
     new Snapshot(logPath, -1, None, Nil, this, -1L)
   }
+
 
   if (currentSnapshot.version == -1) {
     // No checkpoint exists. Call "update" to load delta files.
@@ -144,13 +149,12 @@ class DeltaLog private(
                 lineageLength = currentSnapshot.lineageLength + 1)
             }
           }
-          validateChecksum(newSnapshot)
-          currentSnapshot.uncache()
+//          validateChecksum(newSnapshot)
           currentSnapshot = newSnapshot
         } catch {
           case f: FileNotFoundException =>
             val message = s"No delta log found for the Delta table at $logPath"
-            logInfo(message)
+            println(message)
             // When the state is empty, this is expected. The log will be lazily created when needed.
             // When the state is not empty, it's a real issue and we can't continue to execution.
             if (currentSnapshot.version != -1) {
@@ -159,7 +163,6 @@ class DeltaLog private(
               throw e
             }
         }
-        lastUpdateTimestamp = clock.getTimeMillis()
         currentSnapshot
     }
 
@@ -180,7 +183,6 @@ class DeltaLog private(
   }
   /** Returns the current snapshot. Note this does not automatically `update()`. */
   def snapshot: Snapshot = currentSnapshot
-
 
   /** Get the snapshot at `version`. */
   def getSnapshotAt(
@@ -231,57 +233,113 @@ class DeltaLog private(
       throw new IllegalStateException(s"versions ($deltaVersions) are not contiguous")
     }
   }
+
+
+  /* ---------------------------------------- *
+   |  Log Directory Management and Retention  |
+   * ---------------------------------------- */
+
+  def isValid(): Boolean = {
+    val expectedExistingFile = deltaFile(logPath, currentSnapshot.version)
+    try {
+      store.listFrom(expectedExistingFile)
+        .take(1)
+        .exists(_.getPath.getName == expectedExistingFile.getName)
+    } catch {
+      case _: FileNotFoundException =>
+        // Parent of expectedExistingFile doesn't exist
+        false
+    }
+  }
 }
 
 object DeltaLog {
-//
-//  /**
-//   * We create only a single [[DeltaLog]] for any given path to avoid wasted work
-//   * in reconstructing the log.
-//   */
-//  private val deltaLogCache = {
-//    val builder = CacheBuilder.newBuilder()
-//      .expireAfterAccess(60, TimeUnit.MINUTES)
-//      .removalListener(new RemovalListener[Path, DeltaLog] {
-//        override def onRemoval(removalNotification: RemovalNotification[Path, DeltaLog]) = {
-//          val log = removalNotification.getValue
-//          try log.snapshot.uncache() catch {
-//            case _: java.lang.NullPointerException =>
-//            // Various layers will throw null pointer if the RDD is already gone.
-//          }
-//        }
-//      })
-//    sys.props.get("delta.log.cacheSize")
-//      .flatMap(v => Try(v.toLong).toOption)
-//      .foreach(builder.maximumSize)
-//    builder.build[Path, DeltaLog]()
-//  }
-//
-//  def apply(rawPath: Path): DeltaLog = {
-//    val hadoopConf = new Configuration()
-//    val fs = rawPath.getFileSystem(hadoopConf)
-//    val path = fs.makeQualified(rawPath)
-//    // The following cases will still create a new ActionLog even if there is a cached
-//    // ActionLog using a different format path:
-//    // - Different `scheme`
-//    // - Different `authority` (e.g., different user tokens in the path)
-//    // - Different mount point.
-//    val cached = try {
-//      deltaLogCache.get(path, new Callable[DeltaLog] {
-//        override def call(): DeltaLog = new DeltaLog(path, path.getParent)
-//      })
-//    } catch {
-//      case e: com.google.common.util.concurrent.UncheckedExecutionException =>
-//        throw e.getCause
-//    }
-//
-//    // Invalidate the cache if the reference is no longer valid as a result of the
-//    // log being deleted.
-//    if (cached.snapshot.version == -1 || cached.isValid()) {
-//      cached
-//    } else {
-//      deltaLogCache.invalidate(path)
-//      apply(spark, path)
-//    }
-//  }
+
+  /**
+   * We create only a single [[DeltaLog]] for any given path to avoid wasted work
+   * in reconstructing the log.
+   */
+  private val deltaLogCache = {
+    val builder = CacheBuilder.newBuilder()
+      .expireAfterAccess(60, TimeUnit.MINUTES)
+    sys.props.get("delta.log.cacheSize")
+      .flatMap(v => Try(v.toLong).toOption)
+      .foreach(builder.maximumSize)
+    builder.build[Path, DeltaLog]()
+  }
+
+  def apply(rawPath: Path): DeltaLog = {
+    val hadoopConf = new Configuration()
+    val fs = rawPath.getFileSystem(hadoopConf)
+    val path = fs.makeQualified(rawPath)
+    // The following cases will still create a new ActionLog even if there is a cached
+    // ActionLog using a different format path:
+    // - Different `scheme`
+    // - Different `authority` (e.g., different user tokens in the path)
+    // - Different mount point.
+    val cached = try {
+      deltaLogCache.get(path, new Callable[DeltaLog] {
+        override def call(): DeltaLog = new DeltaLog(path, path.getParent)
+      })
+    } catch {
+      case e: com.google.common.util.concurrent.UncheckedExecutionException =>
+        throw e.getCause
+    }
+
+    // Invalidate the cache if the reference is no longer valid as a result of the
+    // log being deleted.
+    if (cached.snapshot.version == -1 || cached.isValid()) {
+      cached
+    } else {
+      deltaLogCache.invalidate(path)
+      apply(path)
+    }
+  }
+
+
+  /** Invalidate the cached DeltaLog object for the given `dataPath`. */
+  def invalidateCache(dataPath: Path): Unit = {
+    try {
+      val rawPath = new Path(dataPath, "_delta_log")
+      val fs = rawPath.getFileSystem(new Configuration())
+      val path = fs.makeQualified(rawPath)
+      deltaLogCache.invalidate(path)
+    } catch {
+      case NonFatal(e) => println(e.getMessage, e)
+    }
+  }
+
+  def clearCache(): Unit = {
+    deltaLogCache.invalidateAll()
+  }
+
+
+  /** Helper for creating a log when it stored at the root of the data. */
+  def forTable(dataPath: String): DeltaLog = {
+    apply(new Path(dataPath, "_delta_log"))
+  }
+
+
+  /** Find the root of a Delta table from the provided path. */
+  def findDeltaTableRoot(path: Path): Option[Path] = {
+    val fs = path.getFileSystem(new Configuration())
+    var currentPath = path
+    while (currentPath != null && currentPath.getName() != "_delta_log" &&
+      currentPath.getName() != "_samples") {
+      val deltaLogPath = new Path(currentPath, "_delta_log")
+      if (Try(fs.exists(deltaLogPath)).getOrElse(false)) {
+        return Option(currentPath)
+      }
+      currentPath = currentPath.getParent()
+    }
+    None
+  }
+
+
+  def main(args: Array[String]): Unit = {
+    val x = DeltaLog.forTable("file:///Users/songjun.sj/Desktop/testdelta")
+
+    val y = x.snapshot.allFiles
+    println("000000")
+  }
 }
