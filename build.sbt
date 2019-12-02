@@ -172,8 +172,8 @@ lazy val delta_thin = (project in file("delta-thin")) settings (
   libraryDependencies ++= Seq(
     "org.apache.hadoop" % "hadoop-client" % hadoopVersion,
     "com.github.mjakubowski84" %% "parquet4s-core" % "0.11.0",
-    "com.fasterxml.jackson.core" % "jackson-databind" % "2.6.7.1",
-    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.6.7.1",
+    "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.7",
+    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.7",
     "com.chuusai" %% "shapeless" % "2.3.3"
   )
 )

@@ -3,7 +3,7 @@ package io.delta.hive
 import java.io.IOException
 
 import io.delta.thin.DeltaLog
-import org.apache.hadoop.fs.{FileStatus, Path}
+import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
 import org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat
 import org.apache.hadoop.mapred.FileInputFormat._
 import org.apache.hadoop.mapred.JobConf
@@ -23,6 +23,7 @@ class DeltaInputFormat extends MapredParquetInputFormat {
     } else {
       TokenCache.obtainTokensForNamenodes(job.getCredentials, dirs, job)
 
+      println(s"---AAAAA----${dirs.head}")
       // find delta root path
       val rootPath = DeltaLog.findDeltaTableRoot(dirs.head).get
       val deltaLog = DeltaLog.forTable(rootPath.toString)
@@ -32,20 +33,16 @@ class DeltaInputFormat extends MapredParquetInputFormat {
       val fs = rootPath.getFileSystem(job)
 
       // get partition filters
-//      val partitionFilters = if (rootPath != dirs.head) {
-//        val partitionFragments = dirs.map { dir =>
-//          val relativePath = DeltaFileOperations.tryRelativizePath(fs, rootPath, dir)
-//          assert(
-//            !relativePath.isAbsolute,
-//            s"Fail to relativize path $dir against base path $rootPath.")
-//          relativePath.toUri.toString
-//        }
-//        DeltaHelper.resolvePathFilters(snapshotToUse, partitionFragments)
-//      } else {
-//        assert(dirs.length == 1, "Not-partitioned table should only have one input dir.")
-//        Nil
-//      }
-      snapshotToUse.allFiles.map { file =>
+      val partitionFragments = dirs.map { dir =>
+          val relativePath = DeltaInputFormat.tryRelativizePath(fs, rootPath, dir)
+          assert(
+            !relativePath.isAbsolute,
+            s"Fail to relativize path $dir against base path $rootPath.")
+          relativePath.toUri.toString
+        }
+
+      partitionFragments.foreach(println(_))
+      snapshotToUse.allFiles.filter(x => partitionFragments.exists(x.path.contains(_))).map { file =>
         println(s"---8888---${file} / ${rootPath}")
         fs.getFileStatus(new Path(rootPath, file.path))
       }.toArray
@@ -64,6 +61,31 @@ class DeltaInputFormat extends MapredParquetInputFormat {
 }
 
 object DeltaInputFormat {
+
+  def tryRelativizePath(fs: FileSystem, basePath: Path, child: Path): Path = {
+    // Child Paths can be absolute and use a separate fs
+    val childUri = child.toUri
+    // We can map multiple schemes to the same `FileSystem` class, but `FileSystem.getScheme` is
+    // usually just a hard-coded string. Hence, we need to use the scheme of the URI that we use to
+    // create the FileSystem here.
+    if (child.isAbsolute) {
+      try {
+        new Path(fs.makeQualified(basePath).toUri.relativize(fs.makeQualified(child).toUri))
+      } catch {
+        case e: IllegalArgumentException =>
+          throw new IllegalStateException(
+            s"""Failed to relativize the path ($child). This can happen when absolute paths make
+               |it into the transaction log, which start with the scheme s3://, wasbs:// or adls://.
+               |This is a bug that has existed before DBR 5.0. To fix this issue, please upgrade
+               |your writer jobs to DBR 5.0 and please run:
+               |%scala com.databricks.delta.Delta.fixAbsolutePathsInLog("$child")
+             """.stripMargin)
+      }
+    } else {
+      child
+    }
+  }
+
   def spark: SparkSession = SparkSession.builder()
     .master("local[*]")
     .appName("HiveOnDelta Get Files")

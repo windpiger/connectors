@@ -48,8 +48,11 @@ class InMemoryLogReplay {
       case a: Protocol =>
         currentProtocolVersion = a
       case add: AddFile =>
+        println(s"-----QQQQQ---${add.pathAsUri}  ${activeFiles.size} ")
         activeFiles(add.pathAsUri) = add.copy(dataChange = false)
       case remove: RemoveFile =>
+        println(s"-----EEEEEE---${remove.pathAsUri} ${activeFiles.size} -- ${activeFiles.get(remove.pathAsUri)}")
+
         activeFiles.remove(remove.pathAsUri)
       case a: SetTransaction => // do nothing
       case ci: CommitInfo => // do nothing

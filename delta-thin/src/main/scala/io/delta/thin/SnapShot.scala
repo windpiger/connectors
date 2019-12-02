@@ -32,7 +32,7 @@ class Snapshot(
     * Here we are reading the transaction log, and we need to bypass the ACL checks
     * for SELECT any file permissions.
     */
-  private def load(paths: Seq[Path]): Set[SingleAction] = {
+  private def load(paths: Seq[Path]): Seq[SingleAction] = {
     val store = new HDFSLogStore(hdpConf)
 
     paths.map(_.toString).sortWith(_ < _).flatMap { path =>
@@ -44,7 +44,7 @@ class Snapshot(
       } else if (format == "parquet") {
         ParquetReader.read[SingleAction](path).toSeq
       } else Seq.empty[SingleAction]
-    }.toSet
+    }.toSeq
   }
 
   // Reconstruct the state by applying deltas in order to the checkpoint.
