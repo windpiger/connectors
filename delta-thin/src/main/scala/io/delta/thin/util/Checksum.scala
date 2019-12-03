@@ -10,15 +10,15 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
 
 /**
-  * Stats calculated within a snapshot, which we store along individual transactions for
-  * verification.
-  *
-  * @param tableSizeBytes The size of the table in bytes
-  * @param numFiles Number of `AddFile` actions in the snapshot
-  * @param numMetadata Number of `Metadata` actions in the snapshot
-  * @param numProtocol Number of `Protocol` actions in the snapshot
-  * @param numTransactions Number of `SetTransaction` actions in the snapshot
-  */
+ * Stats calculated within a snapshot, which we store along individual transactions for
+ * verification.
+ *
+ * @param tableSizeBytes The size of the table in bytes
+ * @param numFiles Number of `AddFile` actions in the snapshot
+ * @param numMetadata Number of `Metadata` actions in the snapshot
+ * @param numProtocol Number of `Protocol` actions in the snapshot
+ * @param numTransactions Number of `SetTransaction` actions in the snapshot
+ */
 case class VersionChecksum(
     tableSizeBytes: Long,
     numFiles: Long,
@@ -27,8 +27,8 @@ case class VersionChecksum(
     numTransactions: Long)
 
 /**
-  * Verify the state of the table using the checksum files.
-  */
+ * Verify the state of the table using the checksum files.
+ */
 trait VerifyChecksum {
   self: DeltaLog =>
 

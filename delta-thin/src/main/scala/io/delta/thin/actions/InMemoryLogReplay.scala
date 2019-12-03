@@ -18,6 +18,9 @@ package io.delta.thin.actions
 
 import java.net.URI
 
+import io.delta.thin.Snapshot.{State, canonicalizePath}
+import org.apache.hadoop.conf.Configuration
+
 /**
  * Replays a history of action, resolving them to produce the current state
  * of the table. The protocol for resolution is as follows:
@@ -32,31 +35,43 @@ import java.net.URI
  *
  * This class is not thread safe.
  */
-class InMemoryLogReplay {
-  var currentProtocolVersion: Protocol = null
+class InMemoryLogReplay(hadoopConf: Configuration, previousSnapshot: Option[State]) {
+  val state = previousSnapshot.getOrElse(State(null, null, Map.empty[URI, AddFile], 0L, 0L, 0L, 0L))
+  var currentProtocolVersion: Protocol = state.protocol
   var currentVersion: Long = -1
-  var currentMetaData: Metadata = null
-  val activeFiles = new scala.collection.mutable.HashMap[URI, AddFile]()
+  var currentMetaData: Metadata = state.metadata
+  val activeFiles: scala.collection.mutable.Map[URI, AddFile] =
+    scala.collection.mutable.HashMap[URI, AddFile]() ++ state.activeFiles
+  var sizeInBytes: Long = state.sizeInBytes
+  var numOfMetadata: Long = state.numOfMetadata
+  var numOfProtocol: Long = state.numOfProtocol
 
-  def append(version: Long, action: Action): Unit = {
-//    assert(currentVersion == -1 || version == currentVersion + 1,
-//      s"Attempted to replay version $version, but state is at $currentVersion")
+  def append(version: Long, actions: Iterator[SingleAction]): Unit = {
+    assert(currentVersion == -1 || version == currentVersion + 1,
+      s"Attempted to replay version $version, but state is at $currentVersion")
     currentVersion = version
-    action match {
-      case a: Metadata =>
-        currentMetaData = a
-      case a: Protocol =>
-        currentProtocolVersion = a
-      case add: AddFile =>
-        println(s"-----QQQQQ---${add.pathAsUri}  ${activeFiles.size} ")
-        activeFiles(add.pathAsUri) = add.copy(dataChange = false)
-      case remove: RemoveFile =>
-        println(s"-----EEEEEE---${remove.pathAsUri} ${activeFiles.size} -- ${activeFiles.get(remove.pathAsUri)}")
-
-        activeFiles.remove(remove.pathAsUri)
-      case a: SetTransaction => // do nothing
-      case ci: CommitInfo => // do nothing
-      case null => // Some crazy future feature. Ignore
+    actions.foreach { (action: SingleAction) =>
+      action.unwrap match {
+        case a: Metadata =>
+          currentMetaData = a
+          numOfMetadata += 1
+        case a: Protocol =>
+          currentProtocolVersion = a
+          numOfProtocol += 1
+        case add: AddFile =>
+          sizeInBytes += add.size
+          activeFiles(add.pathAsUri) = add.copy(
+            dataChange = false, path = canonicalizePath(add.path, hadoopConf))
+        case remove: RemoveFile =>
+            // ignore to store RemoveFile actions in Memory
+            val file = activeFiles.remove(remove.pathAsUri)
+            if (file.isDefined) {
+              sizeInBytes -= file.get.size
+            }
+        case a: SetTransaction => // do nothing
+        case ci: CommitInfo => // do nothing
+        case null => // Some crazy future feature. Ignore
+      }
     }
   }
 

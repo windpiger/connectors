@@ -160,7 +160,8 @@ lazy val hive = (project in file("hive")) settings (
     ),
     // TODO Figure out how this fixes some bad dependency
     "org.apache.spark" %% "spark-core" % sparkVersion % "test" classifier "tests",
-    "org.scalatest" %% "scalatest" % "3.0.5" % "test"
+    "org.scalatest" %% "scalatest" % "3.0.5" % "test",
+    "com.chuusai" %% "shapeless" % "2.3.3" % "test"
   )
 )
 

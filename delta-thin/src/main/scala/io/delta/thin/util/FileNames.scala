@@ -43,14 +43,14 @@ object FileNames {
     new Path(path, f"$version%020d.checkpoint.parquet")
 
   /**
-    * Returns the paths for all parts of the checkpoint up to the given version.
-    *
-    * In a future protocol version we will write this path instead of checkpointFileSingular.
-    *
-    * Example of the format: 00000000000000004915.checkpoint.0000000020.0000000060.parquet is
-    * checkpoint part 20 out of 60 for the snapshot at version 4915. Zero padding is for
-    * lexicographic sorting.
-    */
+   * Returns the paths for all parts of the checkpoint up to the given version.
+   *
+   * In a future protocol version we will write this path instead of checkpointFileSingular.
+   *
+   * Example of the format: 00000000000000004915.checkpoint.0000000020.0000000060.parquet is
+   * checkpoint part 20 out of 60 for the snapshot at version 4915. Zero padding is for
+   * lexicographic sorting.
+   */
   def checkpointFileWithParts(path: Path, version: Long, numParts: Int): Seq[Path] = {
     Range(1, numParts + 1)
       .map(i => new Path(path, f"$version%020d.checkpoint.$i%010d.$numParts%010d.parquet"))

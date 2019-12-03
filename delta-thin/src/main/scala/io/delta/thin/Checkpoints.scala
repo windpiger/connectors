@@ -8,13 +8,13 @@ import io.delta.thin.util.FileNames._
 import org.apache.hadoop.fs.Path
 
 /**
-  * Records information about a checkpoint.
-  *
-  * @param version the version of this checkpoint
-  * @param size the number of actions in the checkpoint
-  * @param parts the number of parts when the checkpoint has multiple parts. None if this is a
-  *              singular checkpoint
-  */
+ * Records information about a checkpoint.
+ *
+ * @param version the version of this checkpoint
+ * @param size the number of actions in the checkpoint
+ * @param parts the number of parts when the checkpoint has multiple parts. None if this is a
+ *              singular checkpoint
+ */
 case class CheckpointMetaData(
     version: Long,
     size: Long,
@@ -22,16 +22,16 @@ case class CheckpointMetaData(
 
 
 /**
-  * A class to help with comparing checkpoints with each other, where we may have had concurrent
-  * writers that checkpoint with different number of parts.
-  */
+ * A class to help with comparing checkpoints with each other, where we may have had concurrent
+ * writers that checkpoint with different number of parts.
+ */
 case class CheckpointInstance(
     version: Long,
     numParts: Option[Int]) extends Ordered[CheckpointInstance] {
   /**
-    * Due to lexicographic sorting, a version with more parts will appear after a version with
-    * less parts during file listing. We use that logic here as well.
-    */
+   * Due to lexicographic sorting, a version with more parts will appear after a version with
+   * less parts during file listing. We use that logic here as well.
+   */
   def isEarlierThan(other: CheckpointInstance): Boolean = {
     if (other == CheckpointInstance.MaxValue) return true
     version < other.version ||

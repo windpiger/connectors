@@ -23,7 +23,6 @@ class DeltaInputFormat extends MapredParquetInputFormat {
     } else {
       TokenCache.obtainTokensForNamenodes(job.getCredentials, dirs, job)
 
-      println(s"---AAAAA----${dirs.head}")
       // find delta root path
       val rootPath = DeltaLog.findDeltaTableRoot(dirs.head).get
       val deltaLog = DeltaLog.forTable(rootPath.toString)
@@ -43,7 +42,6 @@ class DeltaInputFormat extends MapredParquetInputFormat {
 
       partitionFragments.foreach(println(_))
       snapshotToUse.allFiles.filter(x => partitionFragments.exists(x.path.contains(_))).map { file =>
-        println(s"---8888---${file} / ${rootPath}")
         fs.getFileStatus(new Path(rootPath, file.path))
       }.toArray
       // selected files to Hive to be processed

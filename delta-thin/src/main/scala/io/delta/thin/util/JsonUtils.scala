@@ -27,13 +27,4 @@ object JsonUtils {
   def fromJson[T: Manifest](json: String): T = {
     mapper.readValue[T](json)
   }
-
-  def main(args: Array[String]): Unit = {
-    val x = new HDFSLogStore(new Configuration())
-    val y = x.read("file:///Users/songjun.sj/Desktop/testdelta/_delta_log/00000000000000000000.json")
-      .map{ line =>JsonUtils.mapper.readValue[SingleAction](line) }
-
-//    val z = JsonUtils.mapper.readValue[SingleAction](y.head)
-    println(y)
-  }
 }
