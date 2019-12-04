@@ -1,6 +1,6 @@
 package io.delta.thin.util
 
-import java.io.{PrintWriter, StringWriter}
+import java.io.{File, PrintWriter, StringWriter}
 
 object Utils {
 

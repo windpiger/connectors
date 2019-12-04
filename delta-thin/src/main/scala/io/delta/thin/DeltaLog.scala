@@ -365,6 +365,27 @@ object DeltaLog {
     builder.build[Path, DeltaLog]()
   }
 
+  /** Invalidate the cached DeltaLog object for the given `dataPath`. */
+  def invalidateCache(dataPath: Path): Unit = {
+    try {
+      val rawPath = new Path(dataPath, "_delta_log")
+      val fs = rawPath.getFileSystem(new Configuration())
+      val path = fs.makeQualified(rawPath)
+      deltaLogCache.invalidate(path)
+    } catch {
+      case NonFatal(e) => println(e.getMessage, e)
+    }
+  }
+
+  def clearCache(): Unit = {
+    deltaLogCache.invalidateAll()
+  }
+
+  /** Helper for creating a log when it stored at the root of the data. */
+  def forTable(dataPath: String): DeltaLog = {
+    apply(new Path(dataPath, "_delta_log"))
+  }
+
   def apply(rawPath: Path): DeltaLog = {
     val hadoopConf = new Configuration()
     val fs = rawPath.getFileSystem(hadoopConf)
@@ -391,27 +412,6 @@ object DeltaLog {
       deltaLogCache.invalidate(path)
       apply(path)
     }
-  }
-
-  /** Invalidate the cached DeltaLog object for the given `dataPath`. */
-  def invalidateCache(dataPath: Path): Unit = {
-    try {
-      val rawPath = new Path(dataPath, "_delta_log")
-      val fs = rawPath.getFileSystem(new Configuration())
-      val path = fs.makeQualified(rawPath)
-      deltaLogCache.invalidate(path)
-    } catch {
-      case NonFatal(e) => println(e.getMessage, e)
-    }
-  }
-
-  def clearCache(): Unit = {
-    deltaLogCache.invalidateAll()
-  }
-
-  /** Helper for creating a log when it stored at the root of the data. */
-  def forTable(dataPath: String): DeltaLog = {
-    apply(new Path(dataPath, "_delta_log"))
   }
 
   /** Find the root of a Delta table from the provided path. */

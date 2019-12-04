@@ -175,6 +175,14 @@ lazy val delta_thin = (project in file("delta-thin")) settings (
     "com.github.mjakubowski84" %% "parquet4s-core" % "0.11.0",
     "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.7",
     "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.7",
-    "com.chuusai" %% "shapeless" % "2.3.3"
+    "com.chuusai" %% "shapeless" % "2.3.3",
+    "org.apache.spark" %% "spark-core" % sparkVersion,
+    "org.apache.spark" %% "spark-sql" % sparkVersion,
+
+    "org.apache.spark" %% "spark-core" % sparkVersion classifier "tests",
+    "org.apache.spark" %% "spark-sql" % sparkVersion classifier "tests",
+    "org.apache.spark" %% "spark-catalyst" % sparkVersion % "test" classifier "tests",
+    "org.scalatest" %% "scalatest" % "3.0.5" % "test",
+    "io.delta" %% "delta-core" % "0.4.0" excludeAll (ExclusionRule("org.apache.hadoop"))
   )
 )
