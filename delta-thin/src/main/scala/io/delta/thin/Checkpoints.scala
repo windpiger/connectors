@@ -82,7 +82,7 @@ trait Checkpoints {
 
 
   /** Returns information about the most recent checkpoint. */
-  private[delta] def lastCheckpoint: Option[CheckpointMetaData] = {
+  def lastCheckpoint: Option[CheckpointMetaData] = {
     loadMetadataFromFile(0)
   }
 

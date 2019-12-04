@@ -1,6 +1,6 @@
 package io.delta.thin
 
-import java.io.FileNotFoundException
+import java.io.{File, FileNotFoundException}
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.{Callable, TimeUnit}
 
@@ -384,6 +384,11 @@ object DeltaLog {
   /** Helper for creating a log when it stored at the root of the data. */
   def forTable(dataPath: String): DeltaLog = {
     apply(new Path(dataPath, "_delta_log"))
+  }
+
+  /** Helper for creating a log when it stored at the root of the data. */
+  def forTable(dataPath: File): DeltaLog = {
+    apply(new Path(dataPath.getAbsolutePath, "_delta_log"))
   }
 
   def apply(rawPath: Path): DeltaLog = {

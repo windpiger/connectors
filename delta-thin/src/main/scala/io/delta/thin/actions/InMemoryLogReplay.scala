@@ -60,8 +60,9 @@ class InMemoryLogReplay(hadoopConf: Configuration, previousSnapshot: Option[Stat
           numOfProtocol += 1
         case add: AddFile =>
           sizeInBytes += add.size
-          activeFiles(add.pathAsUri) = add.copy(
+          val canonicalizeAdd = add.copy(
             dataChange = false, path = canonicalizePath(add.path, hadoopConf))
+          activeFiles(canonicalizeAdd.pathAsUri) = canonicalizeAdd
         case remove: RemoveFile =>
             // ignore to store RemoveFile actions in Memory
             val file = activeFiles.remove(remove.pathAsUri)

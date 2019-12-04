@@ -79,8 +79,11 @@ class Snapshot(
 
   lazy val metadata: Metadata = state.metadata
 
+  lazy val protocol: Protocol = state.protocol
+
   lazy val allFiles: Set[AddFile] = state.activeFiles.values.toSet
 
+  lazy val numOfFiles: Long = state.numOfFiles
 }
 
 object Snapshot {
