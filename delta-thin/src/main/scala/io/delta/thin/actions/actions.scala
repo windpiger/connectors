@@ -33,25 +33,25 @@ object Action {
 }
 
 /**
-  * Represents a single change to the state of a Delta table. An order sequence
-  * of actions can be replayed using [[InMemoryLogReplay]] to derive the state
-  * of the table at a given point in time.
-  */
+ * Represents a single change to the state of a Delta table. An order sequence
+ * of actions can be replayed using [[InMemoryLogReplay]] to derive the state
+ * of the table at a given point in time.
+ */
 sealed trait Action {
   def wrap: SingleAction
   def json: String = JsonUtils.toJson(wrap)
 }
 
 /**
-  * Used to block older clients from reading or writing the log when backwards
-  * incompatible changes are made to the protocol. Readers and writers are
-  * responsible for checking that they meet the minimum versions before performing
-  * any other operations.
-  *
-  * Since this action allows us to explicitly block older clients in the case of a
-  * breaking change to the protocol, clients should be tolerant of messages and
-  * fields that they do not understand.
-  */
+ * Used to block older clients from reading or writing the log when backwards
+ * incompatible changes are made to the protocol. Readers and writers are
+ * responsible for checking that they meet the minimum versions before performing
+ * any other operations.
+ *
+ * Since this action allows us to explicitly block older clients in the case of a
+ * breaking change to the protocol, clients should be tolerant of messages and
+ * fields that they do not understand.
+ */
 case class Protocol(
     minReaderVersion: Int = Action.readerVersion,
     minWriterVersion: Int = Action.writerVersion) extends Action {
@@ -61,9 +61,9 @@ case class Protocol(
 }
 
 /**
-  * Sets the committed version for a given application. Used to make operations
-  * like streaming append idempotent.
-  */
+ * Sets the committed version for a given application. Used to make operations
+ * like streaming append idempotent.
+ */
 case class SetTransaction(
     appId: String,
     version: Long,
@@ -81,10 +81,10 @@ sealed trait FileAction extends Action {
 }
 
 /**
-  * Adds a new file to the table. When multiple [[AddFile]] file actions
-  * are seen with the same `path` only the metadata from the last one is
-  * kept.
-  */
+ * Adds a new file to the table. When multiple [[AddFile]] file actions
+ * are seen with the same `path` only the metadata from the last one is
+ * kept.
+ */
 case class AddFile(
     path: String,
     @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -112,14 +112,14 @@ case class AddFile(
 
 object AddFile {
   /**
-    * Misc file-level metadata.
-    *
-    * The convention is that clients may safely ignore any/all of these tags and this should never
-    * have an impact on correctness.
-    *
-    * Otherwise, the information should go as a field of the AddFile action itself and the Delta
-    * protocol version should be bumped.
-    */
+   * Misc file-level metadata.
+   *
+   * The convention is that clients may safely ignore any/all of these tags and this should never
+   * have an impact on correctness.
+   *
+   * Otherwise, the information should go as a field of the AddFile action itself and the Delta
+   * protocol version should be bumped.
+   */
   object Tags {
     sealed abstract class KeyType(val name: String)
 
@@ -135,9 +135,9 @@ object AddFile {
 }
 
 /**
-  * Logical removal of a given file from the reservoir. Acts as a tombstone before a file is
-  * deleted permanently.
-  */
+ * Logical removal of a given file from the reservoir. Acts as a tombstone before a file is
+ * deleted permanently.
+ */
 // scalastyle:off
 case class RemoveFile(
     path: String,
@@ -156,10 +156,10 @@ case class Format(
     options: Map[String, String] = Map.empty)
 
 /**
-  * Updates the metadata of the table. Only the last update to the [[Metadata]]
-  * of a table is kept. It is the responsibility of the writer to ensure that
-  * any data already present in the table is still valid after any change.
-  */
+ * Updates the metadata of the table. Only the last update to the [[Metadata]]
+ * of a table is kept. It is the responsibility of the writer to ensure that
+ * any data already present in the table is still valid after any change.
+ */
 case class Metadata(
     id: String = java.util.UUID.randomUUID().toString,
     name: String = null,
@@ -174,10 +174,10 @@ case class Metadata(
 }
 
 /**
-  * Interface for objects that represents the information for a commit. Commits can be referred to
-  * using a version and timestamp. The timestamp of a commit comes from the remote storage
-  * `lastModifiedTime`, and can be adjusted for clock skew. Hence we have the method `withTimestamp`.
-  */
+ * Interface for objects that represents the information for a commit. Commits can be referred to
+ * using a version and timestamp. The timestamp of a commit comes from the remote storage
+ * `lastModifiedTime`, and can be adjusted for clock skew. Hence we have the method `withTimestamp`.
+ */
 trait CommitMarker {
   /** Get the timestamp of the commit as millis after the epoch. */
   def getTimestamp: Long
@@ -188,10 +188,10 @@ trait CommitMarker {
 }
 
 /**
-  * Holds provenance information about changes to the table. This [[Action]]
-  * is not stored in the checkpoint and has reduced compatibility guarantees.
-  * Information stored in it is best effort (i.e. can be falsified by the writer).
-  */
+ * Holds provenance information about changes to the table. This [[Action]]
+ * is not stored in the checkpoint and has reduced compatibility guarantees.
+ * Information stored in it is best effort (i.e. can be falsified by the writer).
+ */
 case class CommitInfo(
      // The commit version should be left unfilled during commit(). When reading a delta file, we can
      // infer the commit version from the file name and fill in this field then.

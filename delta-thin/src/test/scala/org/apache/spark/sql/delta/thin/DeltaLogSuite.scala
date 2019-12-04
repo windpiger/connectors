@@ -4,13 +4,11 @@ import java.io.{File, FileNotFoundException}
 
 import io.delta.tables.DeltaTable
 import org.apache.hadoop.fs.Path
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.QueryTest
 import org.apache.spark.sql.delta.DeltaOperations.Truncate
 import org.apache.spark.sql.delta.actions.{Action, AddFile, RemoveFile}
 import org.apache.spark.sql.delta.util.{FileNames, JsonUtils}
-import org.apache.spark.sql.delta.{CheckpointInstance, CheckpointMetaData, DeltaLog, DeltaOperations}
-import org.apache.spark.util.Utils
+import org.apache.spark.sql.delta.{CheckpointInstance, DeltaLog, DeltaOperations}
 import io.delta.thin.{DeltaLog => DeltaThinLog}
 import org.apache.spark.network.util.JavaUtils
 import org.apache.spark.sql.test.{SQLTestUtils, SharedSparkSession}
@@ -261,10 +259,14 @@ class DeltaLogSuite extends QueryTest
 
       assert(logThin.snapshot.version == -1)
       logThin.update()
-      assert(logThin.snapshot.version == 0)
+      log.update()
+      val logAllFiles_0 = log.snapshot.allFiles.collect().toSeq
+      assert(logThin.snapshot.version == 0 && logThin.snapshot.version == log.snapshot.version)
       assert(logThin.snapshot.allFiles.forall { f =>
-        snapshotFiles_0.exists(_.getName == f.path) })
-      assert(snapshotFiles_0.length == logThin.snapshot.allFiles.size)
+        snapshotFiles_0.exists(_.getName == f.path) && logAllFiles_0.exists(_.path == f.path)
+      })
+      assert(snapshotFiles_0.length == logThin.snapshot.allFiles.size &&
+        logAllFiles_0.size == logThin.snapshot.allFiles.size)
       assert(convertMetaData(logThin.snapshot.metadata) == log.snapshot.metadata)
       assert(convertProtocol(logThin.snapshot.protocol) == log.snapshot.protocol)
 
@@ -280,10 +282,14 @@ class DeltaLogSuite extends QueryTest
 
       // snapshot is changed after call update()
       logThin.update()
-      assert(logThin.snapshot.version == 1)
+      log.update()
+      val logAllFiles_1 = log.snapshot.allFiles.collect().toSeq
+      assert(logThin.snapshot.version == 1 && logThin.snapshot.version == log.snapshot.version)
       assert(logThin.snapshot.allFiles.forall { f =>
-        snapshotFiles_1.exists(_.getName == f.path) })
-      assert(snapshotFiles_1.length == logThin.snapshot.allFiles.size)
+        snapshotFiles_1.exists(_.getName == f.path) && logAllFiles_1.exists(_.path == f.path)
+      })
+      assert(snapshotFiles_1.length == logThin.snapshot.allFiles.size &&
+        logAllFiles_1.size == logThin.snapshot.allFiles.size)
       assert(convertMetaData(logThin.snapshot.metadata) == log.snapshot.metadata)
       assert(convertProtocol(logThin.snapshot.protocol) == log.snapshot.protocol)
 
@@ -298,12 +304,16 @@ class DeltaLogSuite extends QueryTest
 
       // snapshot is changed after call update()
       logThin.update()
+      log.update()
+      val logAllFiles_2 = log.snapshot.allFiles.collect().toSeq
       val snapshotFiles_2 = dir.listFiles().filter(_.isFile).filter(_.getName.endsWith("snappy.parquet"))
         .filterNot(f => snapshotFiles_1.exists(_.getName == f.getName))
-      assert(logThin.snapshot.version == 2)
+      assert(logThin.snapshot.version == 2 && logThin.snapshot.version == log.snapshot.version)
       assert(logThin.snapshot.allFiles.forall { f =>
-        snapshotFiles_2.exists(_.getName == f.path) })
-      assert(snapshotFiles_2.length == logThin.snapshot.allFiles.size)
+        snapshotFiles_2.exists(_.getName == f.path) && logAllFiles_2.exists(_.path == f.path)
+      })
+      assert(snapshotFiles_2.length == logThin.snapshot.allFiles.size &&
+        logAllFiles_2.size == logThin.snapshot.allFiles.size)
       assert(convertMetaData(logThin.snapshot.metadata) == log.snapshot.metadata)
       assert(convertProtocol(logThin.snapshot.protocol) == log.snapshot.protocol)
 
@@ -320,10 +330,14 @@ class DeltaLogSuite extends QueryTest
 
       // snapshot is changed after call update()
       logThin.update()
-      assert(logThin.snapshot.version == 3)
+      log.update()
+      val logAllFiles_3 = log.snapshot.allFiles.collect().toSeq
+      assert(logThin.snapshot.version == 3 && logThin.snapshot.version == log.snapshot.version)
       assert(logThin.snapshot.allFiles.forall { f =>
-        snapshotFiles_3.exists(_.getName == f.path) })
-      assert(snapshotFiles_3.length == logThin.snapshot.allFiles.size)
+        snapshotFiles_3.exists(_.getName == f.path) && logAllFiles_3.exists(_.path == f.path)
+      })
+      assert(snapshotFiles_3.length == logThin.snapshot.allFiles.size &&
+        logAllFiles_3.size == logThin.snapshot.allFiles.size)
       assert(convertMetaData(logThin.snapshot.metadata) == log.snapshot.metadata)
       assert(convertProtocol(logThin.snapshot.protocol) == log.snapshot.protocol)
 
@@ -341,10 +355,14 @@ class DeltaLogSuite extends QueryTest
 
       // snapshot is changed after call update()
       logThin.update()
-      assert(logThin.snapshot.version == 4)
+      log.update()
+      val logAllFiles_4 = log.snapshot.allFiles.collect().toSeq
+      assert(logThin.snapshot.version == 4 && logThin.snapshot.version == log.snapshot.version)
       assert(logThin.snapshot.allFiles.forall { f =>
-        snapshotFiles_4.exists(_.getName == f.path) })
-      assert(snapshotFiles_4.length == logThin.snapshot.allFiles.size)
+        snapshotFiles_4.exists(_.getName == f.path) && logAllFiles_4.exists(_.path == f.path)
+      })
+      assert(snapshotFiles_4.length == logThin.snapshot.allFiles.size &&
+        logAllFiles_4.size == logThin.snapshot.allFiles.size)
       assert(convertMetaData(logThin.snapshot.metadata) == log.snapshot.metadata)
       assert(convertProtocol(logThin.snapshot.protocol) == log.snapshot.protocol)
 
@@ -362,10 +380,14 @@ class DeltaLogSuite extends QueryTest
 
       // snapshot is changed after call update()
       logThin.update()
-      assert(logThin.snapshot.version == 5)
+      log.update()
+      val logAllFiles_5 = log.snapshot.allFiles.collect().toSeq
+      assert(logThin.snapshot.version == 5 && logThin.snapshot.version == log.snapshot.version)
       assert(logThin.snapshot.allFiles.forall { f =>
-        snapshotFiles_5.exists(_.getName == f.path) })
-      assert(snapshotFiles_5.length == logThin.snapshot.allFiles.size)
+        snapshotFiles_5.exists(_.getName == f.path) && logAllFiles_5.exists(_.path == f.path)
+      })
+      assert(snapshotFiles_5.length == logThin.snapshot.allFiles.size &&
+        logAllFiles_5.size == logThin.snapshot.allFiles.size)
       assert(convertMetaData(logThin.snapshot.metadata) == log.snapshot.metadata)
       assert(convertProtocol(logThin.snapshot.protocol) == log.snapshot.protocol)
 
@@ -389,10 +411,14 @@ class DeltaLogSuite extends QueryTest
 
       // snapshot is changed after call update()
       logThin.update()
-      assert(logThin.snapshot.version == 6)
+      log.update()
+      val logAllFiles_6 = log.snapshot.allFiles.collect().toSeq
+      assert(logThin.snapshot.version == 6 && logThin.snapshot.version == log.snapshot.version)
       assert(logThin.snapshot.allFiles.forall { f =>
-        snapshotFiles_6.exists(_.getName == f.path) })
-      assert(snapshotFiles_6.length == logThin.snapshot.allFiles.size)
+        snapshotFiles_6.exists(_.getName == f.path) && logAllFiles_6.exists(_.path == f.path)
+      })
+      assert(snapshotFiles_6.length == logThin.snapshot.allFiles.size &&
+        logAllFiles_6.size == logThin.snapshot.allFiles.size)
       assert(convertMetaData(logThin.snapshot.metadata) == log.snapshot.metadata)
       assert(convertProtocol(logThin.snapshot.protocol) == log.snapshot.protocol)
 
@@ -405,10 +431,14 @@ class DeltaLogSuite extends QueryTest
       assert(snapshotFiles_6.length == logThin.snapshot.allFiles.size)
 
       logThin.update()
-      assert(logThin.snapshot.version == 6)
+      log.update()
+      val logAllFiles_7 = log.snapshot.allFiles.collect().toSeq
+      assert(logThin.snapshot.version == 6 && logThin.snapshot.version == log.snapshot.version)
       assert(logThin.snapshot.allFiles.forall { f =>
-        snapshotFiles_6.exists(_.getName == f.path) })
-      assert(snapshotFiles_6.length == logThin.snapshot.allFiles.size)
+        snapshotFiles_6.exists(_.getName == f.path) && logAllFiles_7.exists(_.path == f.path)
+      })
+      assert(snapshotFiles_6.length == logThin.snapshot.allFiles.size &&
+        logAllFiles_7.size == logThin.snapshot.allFiles.size)
       assert(convertMetaData(logThin.snapshot.metadata) == log.snapshot.metadata)
       assert(convertProtocol(logThin.snapshot.protocol) == log.snapshot.protocol)
     }
