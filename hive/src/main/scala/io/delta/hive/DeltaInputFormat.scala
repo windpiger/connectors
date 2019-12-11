@@ -26,6 +26,7 @@ class DeltaInputFormat extends MapredParquetInputFormat {
       // find delta root path
       val rootPath = DeltaLog.findDeltaTableRoot(dirs.head).get
       val deltaLog = DeltaLog.forTable(rootPath.toString)
+      deltaLog.update()
       // get the snapshot of the version
       val snapshotToUse = deltaLog.snapshot
 
