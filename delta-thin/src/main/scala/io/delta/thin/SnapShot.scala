@@ -18,8 +18,7 @@ class Snapshot(
     val timestamp: Long) {
 
   import Snapshot._
-
-  private val hadoopConf = new Configuration()
+  import DeltaLog._
 
   /**
    * Load the transaction logs from paths. The files here may have different file formats and the

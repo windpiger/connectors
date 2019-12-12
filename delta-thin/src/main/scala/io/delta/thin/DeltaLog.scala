@@ -25,14 +25,13 @@ class DeltaLog private(
   with VerifyChecksum {
 
   import io.delta.thin.util.FileNames._
-
+  import DeltaLog._
   private lazy implicit val _clock = clock
 
   @volatile private[delta] var asyncUpdateTask: Future[Unit] = _
   /** The timestamp when the last successful update action is finished. */
   @volatile private var lastUpdateTimestamp = -1L
 
-  private[delta] val hadoopConf = new Configuration()
   /** Used to read and write physical log files and checkpoints. */
   val store = createLogStore(hadoopConf)
   /** Direct access to the underlying storage system. */
@@ -348,6 +347,12 @@ class DeltaLog private(
 
 object DeltaLog {
 
+  private[delta] val hadoopConf = new Configuration()
+  Option(System.getenv("HADOOP_CONF_DIR")).foreach { dir =>
+    hadoopConf.addResource(new Path(dir, "core-site.xml"))
+    hadoopConf.addResource(new Path(dir, "hdfs-site.xml"))
+  }
+
   protected lazy val deltaLogAsyncUpdateThreadPool = {
     val tpe = ThreadUtils.newDaemonCachedThreadPool("delta-thin-state-update", 8)
     ExecutionContext.fromExecutorService(tpe)
@@ -369,7 +374,7 @@ object DeltaLog {
   def invalidateCache(dataPath: Path): Unit = {
     try {
       val rawPath = new Path(dataPath, "_delta_log")
-      val fs = rawPath.getFileSystem(new Configuration())
+      val fs = rawPath.getFileSystem(hadoopConf)
       val path = fs.makeQualified(rawPath)
       deltaLogCache.invalidate(path)
     } catch {
@@ -392,7 +397,6 @@ object DeltaLog {
   }
 
   def apply(rawPath: Path): DeltaLog = {
-    val hadoopConf = new Configuration()
     val fs = rawPath.getFileSystem(hadoopConf)
     val path = fs.makeQualified(rawPath)
     // The following cases will still create a new ActionLog even if there is a cached
@@ -421,7 +425,7 @@ object DeltaLog {
 
   /** Find the root of a Delta table from the provided path. */
   def findDeltaTableRoot(path: Path): Option[Path] = {
-    val fs = path.getFileSystem(new Configuration())
+    val fs = path.getFileSystem(hadoopConf)
     var currentPath = path
     while (currentPath != null && currentPath.getName() != "_delta_log" &&
       currentPath.getName() != "_samples") {
