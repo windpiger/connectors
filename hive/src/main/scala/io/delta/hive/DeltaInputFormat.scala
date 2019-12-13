@@ -48,9 +48,10 @@ class DeltaInputFormat extends MapredParquetInputFormat {
       // which is usually the best split size for parquet files.
       val blockSize = job.getLong("parquet.block.size", 128L * 1024 * 1024)
 
+      val normalizedPath = fs.makeQualified(rootPath)
       partitionFragments.foreach(println(_))
       snapshotToUse.allFiles.filter(x => partitionFragments.exists(x.path.contains(_))).map { f =>
-        toFileStatus(fs, rootPath, f, blockSize)
+        toFileStatus(fs, normalizedPath, f, blockSize)
       }.toArray
       // selected files to Hive to be processed
 //      DeltaLog.filterFileList(
