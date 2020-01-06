@@ -10,7 +10,6 @@ import org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat
 import org.apache.hadoop.mapred.FileInputFormat._
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.security.TokenCache
-import org.apache.spark.sql.SparkSession
 
 @UseFileSplitsFromInputFormat
 class DeltaInputFormat extends MapredParquetInputFormat {
@@ -141,9 +140,4 @@ object DeltaInputFormat {
       child
     }
   }
-
-  def spark: SparkSession = SparkSession.builder()
-    .master("local[*]")
-    .appName("HiveOnDelta Get Files")
-    .getOrCreate()
 }
