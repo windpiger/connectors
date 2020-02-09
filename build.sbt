@@ -19,8 +19,9 @@ parallelExecution in ThisBuild := false
 val sparkVersion = "2.4.3"
 val hadoopVersion = "2.8.5"
 val hiveVersion = "2.3.5"
+val deltaCore = "0.5.0"
 lazy val commonSettings = Seq(
-  version := "0.4.0",
+  version := "0.5.0",
   organization := "io.delta",
   scalaVersion := "2.11.12",
   fork := true,
@@ -40,7 +41,7 @@ lazy val core = (project in file("core"))
   .settings(
     name := "delta-core-shaded",
     libraryDependencies ++= Seq(
-      "io.delta" %% "delta-core" % "0.4.0" excludeAll (ExclusionRule("org.apache.hadoop")),
+      "io.delta" %% "delta-core" % deltaCore excludeAll (ExclusionRule("org.apache.hadoop")),
       "org.apache.spark" %% "spark-sql" % sparkVersion excludeAll (ExclusionRule("org.apache.hadoop")),
       "org.apache.hadoop" % "hadoop-client" % hadoopVersion % "provided"
     ),
@@ -173,8 +174,11 @@ lazy val delta_thin = (project in file("delta-thin")) settings (
   libraryDependencies ++= Seq(
     "org.apache.hadoop" % "hadoop-client" % hadoopVersion,
     "com.github.mjakubowski84" %% "parquet4s-core" % "0.11.0",
-    "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.7",
-    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.7",
+    "com.fasterxml.jackson.core" % "jackson-databind" % "2.6.7.3",
+    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.6.7.1",
+    // for prestosql compile
+//    "com.fasterxml.jackson.core" % "jackson-databind" % "2.10.1",
+//    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.1",
     "com.chuusai" %% "shapeless" % "2.3.3",
     "org.apache.spark" %% "spark-core" % sparkVersion,
     "org.apache.spark" %% "spark-sql" % sparkVersion,
@@ -182,7 +186,8 @@ lazy val delta_thin = (project in file("delta-thin")) settings (
     "org.apache.spark" %% "spark-core" % sparkVersion classifier "tests",
     "org.apache.spark" %% "spark-sql" % sparkVersion classifier "tests",
     "org.apache.spark" %% "spark-catalyst" % sparkVersion % "test" classifier "tests",
+
     "org.scalatest" %% "scalatest" % "3.0.5" % "test",
-    "io.delta" %% "delta-core" % "0.4.0" excludeAll (ExclusionRule("org.apache.hadoop"))
+    "io.delta" %% "delta-core" % deltaCore excludeAll (ExclusionRule("org.apache.hadoop"))
   )
 )
